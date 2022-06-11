@@ -1,5 +1,12 @@
 package com.filekeeper.client;
 
+import cloud.CloudMessage;
+import cloud.FileMessage;
+import cloud.FileRequest;
+import cloud.ListFiles;
+import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,8 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
@@ -29,33 +38,30 @@ public class HelloController implements Initializable {
     private static final int PORT = 5000;
     private static final String ADDRESS = "localhost";
 
-    private DataInputStream in;
-    private DataOutputStream out;
-    private FileInputStream fis;
-    private BufferedInputStream bis;
-    private InputStream is;
-    private OutputStream os;
-    private FileOutputStream fos;
-    private BufferedOutputStream bos;
-    private String serverDirectory;
-    private byte[] buf;
+    private ObjectDecoderInputStream is;
+    private ObjectEncoderOutputStream os;
 
-//    PanelController clientPl;
-//    PanelController serverPl;
+    PanelController clientPl;
+    PanelServerController serverPl;
 
 
-    private String HOMEDIR = System.getProperty("user.home") + "/Desktop";
+    private String homeDir = System.getProperty("user.home") + "/Desktop";
+    private String currentDir = System.getProperty("user.home") + "/Desktop";
+    private String currentServerDir;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-//        PanelController clientPl = (PanelController)clientPanel.getProperties().get("ctrl");
-//        PanelController serverPl = (PanelController)serverPanel.getProperties().get("ctrl");
+        clientPl = (PanelController)clientPanel.getProperties().get("ctrl");
+        serverPl = (PanelServerController) serverPanel.getProperties().get("ctrl");
+        commandsTextArea.setStyle("-fx-font-size: 15;");
         connect();
     }
 
     public void CopyBtnAction(ActionEvent actionEvent) {
         PanelController clientPl = (PanelController)clientPanel.getProperties().get("ctrl");
-        PanelController serverPl = (PanelController)serverPanel.getProperties().get("ctrl");
+        PanelServerController serverPl = (PanelServerController) serverPanel.getProperties().get("ctrl");
+        currentDir = clientPl.getCurrentPath();
+        currentServerDir = serverPl.getCurrentPath();
 
         if (clientPl.getSelectedFileName() == null && serverPl.getSelectedFileName() == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "You didn't choose any file", ButtonType.CLOSE);
@@ -75,33 +81,25 @@ public class HelloController implements Initializable {
         Path srcPath = Paths.get(srcPc.getCurrentPath(), srcPc.getSelectedFileName());
         Path dstPath = Paths.get(dstPc.getCurrentPath()).resolve(srcPath.getFileName().toString());
 
-        Fileinfo fi = new Fileinfo(srcPath);
-
         if (srcPc == serverPl) {
             try {
-                String message = "RECEIVEFILE@" + srcPath.toString();
-                System.out.println(message);
-                sendMsg(message);
-                getFile(dstPath.getParent() + "\\" + srcPath.getFileName(), fi.getSize());
+                Fileinfo fileGet = serverPl.getTableView().getSelectionModel().getSelectedItem();
+                getFile(fileGet.getFilename());
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                e.printStackTrace();
             }
-
         }
         else {
             try {
-                String message = "SENDFILE@" + serverPl.pathField.getText() + "\\" + srcPc.getSelectedFileName() + "%%" + fi.getSize();
-                System.out.println(message);
-                sendMsg(message);
-                sendFile(srcPath.toString());
+                Fileinfo fileSend = clientPl.getTableView().getSelectionModel().getSelectedItem();
+                sendFile(fileSend.getFilename());
             } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
 
     public void DeleteBtnAction(ActionEvent actionEvent) {
-        PanelController clientPl = (PanelController)clientPanel.getProperties().get("ctrl");
-        PanelController serverPl = (PanelController)serverPanel.getProperties().get("ctrl");
 
         if (clientPl.getSelectedFileName() == null && serverPl.getSelectedFileName() == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "You didn't choose any file", ButtonType.CLOSE);
@@ -118,53 +116,40 @@ public class HelloController implements Initializable {
 
         Path srcPath = Paths.get(srcPc.getCurrentPath(), srcPc.getSelectedFileName());
 
-        try {
-            if (srcPc == serverPl) {
-                sendMsg("@DELETE%%%" + srcPath);
-            }
-            Files.delete(srcPath);
-            srcPc.updateList(Paths.get(srcPc.getCurrentPath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
     }
 
     private void connect() {
         try {
             socket = new Socket(ADDRESS, PORT);
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            is = new DataInputStream(socket.getInputStream());
-            os = new DataOutputStream(socket.getOutputStream());
-
-            ArrayList<Fileinfo> fileinfo = new ArrayList<>();
-            PanelServerController serverPl = (PanelServerController) serverPanel.getProperties().get("ctrl");
+            os = new ObjectEncoderOutputStream(socket.getOutputStream());
+            is = new ObjectDecoderInputStream(socket.getInputStream());
+            serverPl.setOs(this.os);
 
             new Thread(() -> {
                 try {
-                    String fromServer;
                     while (true) {
-                        fromServer = in.readUTF();
-                        System.out.println("I got msg!");
-                        if (fromServer.startsWith("FILEINFO@")) {
-                            String[] firstSplit = fromServer.split("@");
-                            String[] secondSplit = firstSplit[1].split("&");
-                            for (int i = 0; i < secondSplit.length; i++) {
-                                String objLine = secondSplit[i];
-                                if (objLine.split("%%").length == 4) {
-                                    fileinfo.add(new Fileinfo(objLine.split("%%")[0], Fileinfo.getType(objLine.split("%%")[1]), Integer.valueOf(objLine.split("%%")[2]), LocalDateTime.parse( objLine.split("%%")[3])));
-                                }
-                            }
-                            serverDirectory = secondSplit[0];
-                            serverPl.updateList(serverDirectory, fileinfo);
+                        CloudMessage message = read();
+                        if (message instanceof ListFiles listFiles) {
+                            Platform.runLater(() -> {
+                                ArrayList<Fileinfo> fileinfo = new ArrayList<>(Fileinfo.getFileInfoList(listFiles.getFiles()));
+                                currentServerDir = fileinfo.get(0).getDir();
+                                serverPl.updateList(currentServerDir, fileinfo);
+                                serverPl.pathField.setText(currentServerDir);
+                            });
+                        } else if (message instanceof FileMessage fileMessage) {
+                            System.out.println("FileMessage");
+                            Path current = Path.of(currentDir).resolve(fileMessage.getName());
+                            Files.write(current, fileMessage.getData());
+                            LocalDateTime localDateTime = LocalDateTime.now();
+
+                            Platform.runLater(() -> {
+                                clientPl.updateList(Path.of(currentDir));
+                            });
                         }
-                        if (fromServer.startsWith("CLIENTCOMMANDLINE@")) {
-                            commandsTextArea.appendText(fromServer.split("@")[1] + "\n");
-                        }
-                        System.out.println("Server sent: " + fromServer);
                     }
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }
             }).start();
@@ -175,50 +160,34 @@ public class HelloController implements Initializable {
 
     }
 
-    public void sendMsg(String message) {
-        try {
-            out.writeUTF(message);
-            out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private List<Fileinfo> getFiles(String dir) {
+        ArrayList<Fileinfo> fileinfoArrayList = new ArrayList<>();
+        for (String file : new File(dir).list()) {
+            fileinfoArrayList.add(new Fileinfo(Path.of(file)));
         }
-    }
-
-    public void getFile(String fileReceive, long fileSize) throws IOException {
-        byte [] mybytearray  = new byte [Math.toIntExact(fileSize)];
-        int bytesRead;
-        int current = 0;
-        fos = new FileOutputStream(fileReceive);
-        bos = new BufferedOutputStream(fos);
-        bytesRead = is.read(mybytearray,0,mybytearray.length);
-        current = bytesRead;
-
-        do {
-            bytesRead =
-                    is.read(mybytearray, current, (mybytearray.length-current));
-            if(bytesRead >= 0) current += bytesRead;
-        } while(bytesRead > -1);
-
-        bos.write(mybytearray, 0 , current);
-        bos.flush();
-        System.out.println("File " + fileReceive
-                + " downloaded (" + current + " bytes read)");
+        return fileinfoArrayList;
     }
 
 
-    private void sendFile(String fileToSend) throws IOException {
-        // send file
-        File myFile = new File (fileToSend);
-        byte [] mybytearray  = new byte [(int)myFile.length()];
-        fis = new FileInputStream(myFile);
-        bis = new BufferedInputStream(fis);
-        bis.read(mybytearray,0,mybytearray.length);
-        System.out.println("Sending " + fileToSend + "(" + mybytearray.length + " bytes)");
-        os.write(mybytearray,0,mybytearray.length);
+    public void sendFile(String fileToSend) throws IOException {
+        commandsTextArea.appendText("File " + fileToSend + " was sent to server!\n");
+        write(new FileMessage(Path.of(currentDir).resolve(fileToSend)));
+    }
+
+
+    private void getFile(String fileToGet) throws IOException {
+        commandsTextArea.appendText("File " + fileToGet + " was downloaded from server!\n");
+        write(new FileRequest(fileToGet));
+    }
+
+    public CloudMessage read() throws IOException, ClassNotFoundException {
+        return (CloudMessage) is.readObject();
+    }
+
+    public void write(CloudMessage msg) throws IOException {
+        os.writeObject(msg);
         os.flush();
-        System.out.println("Done.");
     }
-
 
 }
 

@@ -1,10 +1,16 @@
 package com.filekeeper.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class Fileinfo {
     public enum FileType{
@@ -25,6 +31,7 @@ public class Fileinfo {
     private FileType type;
     private long size;
     private LocalDateTime lastModified;
+    private String dir;
 
     public String getFilename() {
         return filename;
@@ -58,6 +65,10 @@ public class Fileinfo {
         this.lastModified = lastModified;
     }
 
+    public String getDir() {
+        return dir;
+    }
+
     public Fileinfo(Path path){
         try {
             this.filename = path.getFileName().toString();
@@ -72,15 +83,31 @@ public class Fileinfo {
         }
     }
 
-    public Fileinfo(String filename, FileType type, long size, LocalDateTime lastModified) {
+    public Fileinfo(String dir, String filename, FileType type, long size, LocalDateTime lastModified) {
+        this.dir = dir;
         this.filename = filename;
         this.type = type;
         this.size = size;
         this.lastModified = lastModified;
     }
 
+    public static List<Fileinfo> getFileInfoList(List<String> files) {
+        DateTimeFormatter aFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.of(2017, Month.AUGUST, 3, 12, 30, 25);
+
+        List<Fileinfo> fileinfos = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        String[] sp;
+        for (String s : files) {
+            sp = s.split(" ");
+            fileinfos.add(new Fileinfo(sp[0], sp[1], getType(sp[1]), Long.valueOf(sp[2]), localDateTime));
+        }
+        return fileinfos;
+    }
+
     public static FileType getType(String s) {
-        if(s.equals("File")) {
+        if(s.indexOf(".") > -1) {
             return FileType.File;
         } else {
             return FileType.DIRECTORY;

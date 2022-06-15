@@ -103,8 +103,6 @@ public class PanelServerController extends PanelController implements Initializa
         });
     }
 
-    public Button getBtnUp() { return btnUp; }
-
     public TableView<Fileinfo> getTableView() {
         return tableView;
     }
@@ -124,7 +122,7 @@ public class PanelServerController extends PanelController implements Initializa
     public void btnUpPathActionServer(ActionEvent actionEvent) {
         String currentPath = getCurrentPath();
         Path upperPath = Paths.get(pathField.getText()).getParent();
-        if (!currentPath.equals(".\\server\\UserFiles")) {
+        if (!(upperPath.equals(Path.of("./UserFiles")))) {
             updateList(upperPath);
             try {
                 write(new PathRequest(upperPath));

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:controller="com.filekeeper.client.RegistrationController"
+      xmlns:fx="http://javafx.com/fxml" alignment="center">
+
+    <Label text="login"/>
+    <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="login"/>
+    <Label text="password"/>
+    <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" promptText="password"/>
+    <Label text="nickname"/>
+
+    <Button text="registration" onAction="#tryToReg"/>
+
+</VBox>

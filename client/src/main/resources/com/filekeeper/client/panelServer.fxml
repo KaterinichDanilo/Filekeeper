@@ -6,10 +6,10 @@
 
     <HBox>
         <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" />
-<!--        <Button text="Up" onAction="#btnUpPathAction"/>-->
+        <Button fx:id="btnUp" text="Up" onAction="#btnUpPathActionServer"/>
     </HBox>
 
-    <TableView fx:id="tableView" VBox.vgrow="ALWAYS"/>
+    <TableView fx:id="tableView" VBox.vgrow="ALWAYS" editable="true"/>
 
     <properties>
         <ctrl><fx:reference source="controller"/> </ctrl>

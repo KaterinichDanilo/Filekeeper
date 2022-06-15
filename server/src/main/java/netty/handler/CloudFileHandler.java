@@ -4,30 +4,63 @@ import cloud.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage>{
 
-    private Path currentDir = Path.of("./server/UserFiles");
+    private Path currentDir = Path.of("./UserFiles");
+    private UsersData data;
 
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ctx.writeAndFlush(new ListFiles(currentDir));
+    public CloudFileHandler(UsersData data) {
+        this.data = data;
     }
+
+    //    @Override
+//    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+//        ctx.writeAndFlush(new ListFiles(currentDir));
+//    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, CloudMessage cloudMessage) throws Exception {
-        if (cloudMessage instanceof FileRequest fileRequest) {
+        if (cloudMessage instanceof UpdateListFiles update) {
+            ctx.writeAndFlush(new ListFiles(currentDir));
+        } else if (cloudMessage instanceof FileRequest fileRequest) {
             ctx.writeAndFlush(new FileMessage(currentDir.resolve(fileRequest.getName())));
         } else if (cloudMessage instanceof FileMessage fileMessage) {
             Files.write(currentDir.resolve(fileMessage.getName()), fileMessage.getData());
+            System.out.println(currentDir);
+            System.out.println(currentDir.resolve(fileMessage.getName()));
             ctx.writeAndFlush(new ListFiles(currentDir));
         } else if (cloudMessage instanceof PathRequest pathRequest) {
             currentDir = Path.of(pathRequest.getPath());
-            System.out.println(currentDir);
             ctx.writeAndFlush(new ListFiles(currentDir));
+        } else if (cloudMessage instanceof Authentication auth) {
+            if (data.getPassword(auth.getLogin()).equals(auth.getPassword())) {
+                currentDir = currentDir.resolve(auth.getLogin());
+                System.out.println(currentDir);
+                auth.setAuthStatus(true);
+            } else {
+                auth.setAuthStatus(false);
+            }
+            ctx.writeAndFlush(auth);
+        } else if (cloudMessage instanceof Registration reg) {
+            if (data.registration(reg.getLogin(), reg.getPassword())) {
+                File folder = new File(String.valueOf(currentDir.resolve(reg.getLogin())));
+                System.out.println(folder.getName());
+                System.out.println(folder.mkdirs());
+                System.out.println(currentDir.resolve(reg.getLogin()));
+                reg.setRegStatus(true);
+            } else {
+                System.out.println(false);
+                reg.setRegStatus(false);
+            }
+            ctx.writeAndFlush(reg);
         }
     }
 }

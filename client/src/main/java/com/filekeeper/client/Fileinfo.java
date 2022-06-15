@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
@@ -11,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class Fileinfo {
     public enum FileType{
@@ -92,16 +94,15 @@ public class Fileinfo {
     }
 
     public static List<Fileinfo> getFileInfoList(List<String> files) {
-        DateTimeFormatter aFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.of(2017, Month.AUGUST, 3, 12, 30, 25);
+//        DateTimeFormatter aFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+//        LocalDateTime localDateTime = LocalDateTime.of(2017, Month.AUGUST, 3, 12, 30, 25);
 
         List<Fileinfo> fileinfos = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         String[] sp;
         for (String s : files) {
             sp = s.split(" ");
-            fileinfos.add(new Fileinfo(sp[0], sp[1], getType(sp[1]), Long.valueOf(sp[2]), localDateTime));
+            fileinfos.add(new Fileinfo(sp[0], sp[1], getType(sp[1]), Long.valueOf(sp[2]), getLocalDateTime(sp[3], sp[4])));
         }
         return fileinfos;
     }
@@ -113,5 +114,17 @@ public class Fileinfo {
             return FileType.DIRECTORY;
         }
 
+    }
+
+    private static LocalDateTime getLocalDateTime(String s1, String s2) {
+        int year = Integer.parseInt(s1.split("-")[2]);
+        Month month = Month.of(Integer.parseInt(s1.split("-")[0]));
+        int day = Integer.parseInt(s1.split("-")[0]);
+
+        int hours = Integer.parseInt(s2.split(":")[0]);
+        int minute = Integer.parseInt(s2.split(":")[1]);
+        int seconds = Integer.parseInt(s2.split(":")[2]);
+
+        return LocalDateTime.of(year, month, day, hours, minute, seconds);
     }
 }

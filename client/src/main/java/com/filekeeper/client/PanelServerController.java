@@ -1,5 +1,8 @@
 package com.filekeeper.client;
 
+import cloud.CloudMessage;
+import cloud.PathRequest;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -30,6 +33,14 @@ public class PanelServerController extends PanelController implements Initializa
     TableView<Fileinfo> tableView;
     @FXML
     TextField pathField;
+    @FXML
+    Button btnUp;
+
+    private ObjectEncoderOutputStream os;
+
+    public void setOs(ObjectEncoderOutputStream os) {
+        this.os = os;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -51,10 +62,9 @@ public class PanelServerController extends PanelController implements Initializa
         fileDateColumn.setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getLastModified().format(dateTimeFormatter)));
         fileDateColumn.setPrefWidth(180);
 
-
-
         tableView.getColumns().addAll(fileTypeColumn, fileNameColumn, fileSizeColumn, fileDateColumn);
         tableView.getSortOrder().add(fileTypeColumn);
+
         fileSizeColumn.setCellFactory(column -> {
             return new TableCell<Fileinfo, Long>() {
                 @Override
@@ -80,12 +90,20 @@ public class PanelServerController extends PanelController implements Initializa
                 if (mouseEvent.getClickCount() == 2) {
                     Path path = Paths.get(pathField.getText()).resolve(tableView.getSelectionModel().getSelectedItem().getFilename());
                     if (Files.isDirectory(path)){
+                        try {
+                            System.out.println(path);
+                            write(new PathRequest(path));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         updateList(path);
                     }
                 }
             }
         });
     }
+
+    public Button getBtnUp() { return btnUp; }
 
     public TableView<Fileinfo> getTableView() {
         return tableView;
@@ -103,18 +121,17 @@ public class PanelServerController extends PanelController implements Initializa
         tableView.sort();
     }
 
-//    public void btnUpPathAction(ActionEvent actionEvent) {
-//        Path upperPatr = Paths.get(pathField.getText()).getParent();
-//        if (Paths.get(pathField.getText()) != Paths.get("server/UserFiles")) {
-//            updateList(upperPatr);
-//        }
-//    }
-
-
-
-    public void selectDiskAction(ActionEvent actionEvent) {
-        ComboBox<String> comboBox = (ComboBox<String>)actionEvent.getSource();
-        updateList(Paths.get(comboBox.getSelectionModel().getSelectedItem()));
+    public void btnUpPathActionServer(ActionEvent actionEvent) {
+        String currentPath = getCurrentPath();
+        Path upperPath = Paths.get(pathField.getText()).getParent();
+        if (!currentPath.equals(".\\server\\UserFiles")) {
+            updateList(upperPath);
+            try {
+                write(new PathRequest(upperPath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public String getSelectedFileName() {
@@ -126,6 +143,11 @@ public class PanelServerController extends PanelController implements Initializa
 
     public String getCurrentPath() {
         return pathField.getText();
+    }
+
+    public void write(CloudMessage msg) throws IOException {
+        os.writeObject(msg);
+        os.flush();
     }
 
 }

@@ -2,14 +2,19 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.PanelServerController">
+<VBox xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.PanelServerController"
+      stylesheets="../../../css/style.css">
 
     <HBox>
         <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" />
         <Button fx:id="btnUp" text="Up" onAction="#btnUpPathActionServer"/>
+
+        <Button fx:id="newFolderButtonClient" text="New folder" onAction="#createNewFolderClient" minWidth="100"/>
+        <TextField fx:id="newFolderNameClient" promptText="New Folder" visible="false" managed="false" minWidth="100"/>
+        <Button fx:id="acceptNewFolderNameClient" text="Accept" onAction="#acceptNewFolderNameClient" visible="false" managed="false" minWidth="100"/>
     </HBox>
 
-    <TableView fx:id="tableView" VBox.vgrow="ALWAYS" editable="true"/>
+    <TableView fx:id="tableView" VBox.vgrow="ALWAYS" focusTraversable="true"/>
 
     <properties>
         <ctrl><fx:reference source="controller"/> </ctrl>

@@ -16,8 +16,10 @@ import java.util.stream.Collectors;
 public class ListFiles implements CloudMessage {
 
     private List<String> files = new ArrayList<>();
+    private String path;
 
     public ListFiles(Path path) throws IOException {
+        this.path = String.valueOf(path);
         SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
         File[] file = new File(String.valueOf(path)).listFiles();
         String fileInfo;
@@ -27,4 +29,11 @@ public class ListFiles implements CloudMessage {
         }
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 }

@@ -22,6 +22,8 @@ public class RegistrationController {
     public void tryToReg(ActionEvent actionEvent) {
         String login = loginField.getText().trim();
         String password = passwordField.getText().trim();
+        loginField.clear();
+        passwordField.clear();
 
         controller.registration(login, password);
     }

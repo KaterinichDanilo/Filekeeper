@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 
 <VBox fx:controller="com.filekeeper.client.RegistrationController"
-      xmlns:fx="http://javafx.com/fxml" alignment="center">
+      xmlns:fx="http://javafx.com/fxml" alignment="center" stylesheets="css/style.css">
 
     <Label text="login"/>
     <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="login"/>

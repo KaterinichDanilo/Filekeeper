@@ -118,7 +118,6 @@ public class HelloController implements Initializable {
         if (srcPc == serverPl) {
             try {
                 Fileinfo fileGet = serverPl.getTableView().getSelectionModel().getSelectedItem();
-                System.out.println(fileGet.getFilename());
                 getFile(fileGet.getFilename());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -127,7 +126,6 @@ public class HelloController implements Initializable {
         else {
             try {
                 Fileinfo fileSend = clientPl.getTableView().getSelectionModel().getSelectedItem();
-                System.out.println(fileSend.getFilename());
                 sendFile(fileSend.getFilename());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -136,10 +134,16 @@ public class HelloController implements Initializable {
     }
 
     public void DeleteBtnAction(ActionEvent actionEvent) {
+        PanelController clientPl = (PanelController)clientPanel.getProperties().get("ctrl");
+        PanelServerController serverPl = (PanelServerController) serverPanel.getProperties().get("ctrl");
+        currentDir = clientPl.getCurrentPath();
+        currentServerDir = serverPl.getCurrentPath();
 
         if (clientPl.getSelectedFileName() == null && serverPl.getSelectedFileName() == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "You didn't choose any file", ButtonType.CLOSE);
-            alert.showAndWait();
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "You didn't choose any file", ButtonType.CLOSE);
+                alert.showAndWait();
+            });
             return;
         }
 
@@ -150,7 +154,24 @@ public class HelloController implements Initializable {
             srcPc = serverPl;
         }
 
-        Path srcPath = Paths.get(srcPc.getCurrentPath(), srcPc.getSelectedFileName());
+        Path path = Paths.get(srcPc.getCurrentPath(), srcPc.getSelectedFileName());
+        File file = new File(String.valueOf(path));
+
+        if (srcPc == clientPl) {
+            if(file.delete()){
+                clientPl.updateList(Path.of(currentDir));
+                commandsTextArea.appendText(file + "was deleted from your computer\n");
+            }else {
+                commandsTextArea.appendText(file + "wasn't deleted from your computer\n");
+            }
+        } else {
+            try {
+                write(new DeleteFile(String.valueOf(path)));
+                write(new UpdateListFiles(login));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 
@@ -171,12 +192,13 @@ public class HelloController implements Initializable {
                                 Platform.runLater(() -> {
                                     login = loginField.getText();
                                     currentServerDir += login;
-                                    System.out.println(currentServerDir);
                                     setAuthenticated(true);
                                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                                             ("Hello, " + login + "! You are logged into your account"), ButtonType.CLOSE);
                                     alert.showAndWait();
+
                                 });
+                                write(new UpdateListFiles(login));
                                 break;
                             } else {
                                 Platform.runLater(() -> {
@@ -187,7 +209,6 @@ public class HelloController implements Initializable {
                             }
                         }
                         if (message instanceof Registration reg) {
-                            System.out.println(reg.getLogin() + " " + reg.getPassword() + " " + reg.getRegStatus());
                             if (reg.getRegStatus()) {
                                 Platform.runLater(() -> {
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION,
@@ -206,19 +227,15 @@ public class HelloController implements Initializable {
 
 
                     while (true) {
-                        write(new UpdateListFiles(login));
                         CloudMessage message = read();
                         if (message instanceof ListFiles listFiles) {
                             Platform.runLater(() -> {
                                 ArrayList<Fileinfo> fileinfo = new ArrayList<>(Fileinfo.getFileInfoList(listFiles.getFiles()));
-                                if (fileinfo.size() > 0) {
-                                    currentServerDir = fileinfo.get(0).getDir();
-                                    serverPl.updateList(currentServerDir, fileinfo);
-                                }
+                                currentServerDir = listFiles.getPath();
+                                serverPl.updateList(currentServerDir, fileinfo);
                                 serverPl.pathField.setText(currentServerDir);
                             });
                         } else if (message instanceof FileMessage fileMessage) {
-                            System.out.println("FileMessage");
                             Path current = Path.of(currentDir).resolve(fileMessage.getName());
                             Files.write(current, fileMessage.getData());
                             LocalDateTime localDateTime = LocalDateTime.now();
@@ -226,6 +243,12 @@ public class HelloController implements Initializable {
                             Platform.runLater(() -> {
                                 clientPl.updateList(Path.of(currentDir));
                             });
+                        } else if (message instanceof DeleteFile deleteFile) {
+                            if (deleteFile.getStatus()) {
+                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "was deleted from the server"));
+                            } else {
+                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "wasn't deleted from the server"));
+                            }
                         }
                     }
                 } catch (IOException e) {

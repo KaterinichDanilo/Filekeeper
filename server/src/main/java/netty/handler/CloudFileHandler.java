@@ -34,8 +34,6 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage>{
             ctx.writeAndFlush(new FileMessage(currentDir.resolve(fileRequest.getName())));
         } else if (cloudMessage instanceof FileMessage fileMessage) {
             Files.write(currentDir.resolve(fileMessage.getName()), fileMessage.getData());
-            System.out.println(currentDir);
-            System.out.println(currentDir.resolve(fileMessage.getName()));
             ctx.writeAndFlush(new ListFiles(currentDir));
         } else if (cloudMessage instanceof PathRequest pathRequest) {
             currentDir = Path.of(pathRequest.getPath());
@@ -43,7 +41,6 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage>{
         } else if (cloudMessage instanceof Authentication auth) {
             if (data.getPassword(auth.getLogin()).equals(auth.getPassword())) {
                 currentDir = currentDir.resolve(auth.getLogin());
-                System.out.println(currentDir);
                 auth.setAuthStatus(true);
             } else {
                 auth.setAuthStatus(false);
@@ -52,15 +49,20 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage>{
         } else if (cloudMessage instanceof Registration reg) {
             if (data.registration(reg.getLogin(), reg.getPassword())) {
                 File folder = new File(String.valueOf(currentDir.resolve(reg.getLogin())));
-                System.out.println(folder.getName());
-                System.out.println(folder.mkdirs());
-                System.out.println(currentDir.resolve(reg.getLogin()));
+                folder.mkdirs();
                 reg.setRegStatus(true);
             } else {
-                System.out.println(false);
                 reg.setRegStatus(false);
             }
             ctx.writeAndFlush(reg);
+        } else if (cloudMessage instanceof DeleteFile deleteFile) {
+            File file = new File(deleteFile.getPath());
+            deleteFile.setStatus(file.delete());
+            ctx.writeAndFlush(deleteFile);
+        } else if (cloudMessage instanceof CreateFolder createFolder) {
+            File folder = new File(String.valueOf(Path.of(createFolder.getPath()).resolve(createFolder.getName())));
+            folder.mkdir();
+            ctx.writeAndFlush(new ListFiles(Path.of(createFolder.getPath())));
         }
     }
 }

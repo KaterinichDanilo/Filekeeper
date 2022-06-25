@@ -1,5 +1,7 @@
 package com.filekeeper.client;
 
+import cloud.PathRequest;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -9,6 +11,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileSystems;
@@ -132,4 +135,11 @@ public class PanelController implements Initializable {
         return pathField.getText();
     }
 
+    public void btnUpPathActionServer(ActionEvent actionEvent) {
+        String currentPath = getCurrentPath();
+        Path upperPath = Paths.get(pathField.getText()).getParent();
+        if (!(upperPath.equals(null))) {
+            updateList(upperPath);
+        }
+    }
 }

@@ -1,8 +1,11 @@
 package com.filekeeper.client;
 
 import cloud.CloudMessage;
+import cloud.CreateFolder;
 import cloud.PathRequest;
+import cloud.UpdateListFiles;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -12,10 +15,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,13 +28,19 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class PanelServerController extends PanelController implements Initializable {
+public class PanelServerController extends PanelController implements Initializable, Serializable {
     @FXML
     TableView<Fileinfo> tableView;
     @FXML
     TextField pathField;
     @FXML
     Button btnUp;
+    @FXML
+    public Button acceptNewFolderNameClient;
+    @FXML
+    public TextField newFolderNameClient;
+    @FXML
+    public Button newFolderButtonClient;
 
     private ObjectEncoderOutputStream os;
 
@@ -88,22 +94,18 @@ public class PanelServerController extends PanelController implements Initializa
             @Override
             public void handle(MouseEvent mouseEvent) {
                 if (mouseEvent.getClickCount() == 2) {
-                    Path path = Paths.get(pathField.getText()).resolve(tableView.getSelectionModel().getSelectedItem().getFilename());
-                    if (Files.isDirectory(path)){
+                    Path path = Paths.get(getCurrentPath()).resolve(tableView.getSelectionModel().getSelectedItem().getFilename());
+                    if (tableView.getSelectionModel().getSelectedItem().getFilename().indexOf(".") == -1){
                         try {
-                            System.out.println(path);
                             write(new PathRequest(path));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        updateList(path);
                     }
                 }
             }
         });
     }
-
-    public Button getBtnUp() { return btnUp; }
 
     public TableView<Fileinfo> getTableView() {
         return tableView;
@@ -124,8 +126,7 @@ public class PanelServerController extends PanelController implements Initializa
     public void btnUpPathActionServer(ActionEvent actionEvent) {
         String currentPath = getCurrentPath();
         Path upperPath = Paths.get(pathField.getText()).getParent();
-        if (!currentPath.equals(".\\server\\UserFiles")) {
-            updateList(upperPath);
+        if (!(upperPath.equals(Path.of("./UserFiles")))) {
             try {
                 write(new PathRequest(upperPath));
             } catch (IOException e) {
@@ -148,6 +149,45 @@ public class PanelServerController extends PanelController implements Initializa
     public void write(CloudMessage msg) throws IOException {
         os.writeObject(msg);
         os.flush();
+    }
+
+    public void acceptNewFolderNameClient(ActionEvent actionEvent) {
+        String newFolderFileName = "";
+
+        if (newFolderNameClient.getText().length() == 0) {
+            newFolderFileName = "New Folder";
+        }
+        if (newFolderNameClient.getText().indexOf(".") >= 0) {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "There should be no dot in the folder name", ButtonType.OK);
+                alert.showAndWait();
+            });
+            return;
+        }
+        newFolderFileName = newFolderNameClient.getText();
+        try {
+            CreateFolder folder = new CreateFolder(getCurrentPath(), newFolderFileName);
+            write(folder);
+        } catch (IOException e) {
+            System.out.println("Exception");
+            e.printStackTrace();
+        }
+
+        newFolderButtonClient.setVisible(true);
+        newFolderButtonClient.setManaged(true);
+        newFolderNameClient.setVisible(false);
+        newFolderNameClient.setManaged(false);
+        acceptNewFolderNameClient.setVisible(false);
+        acceptNewFolderNameClient.setManaged(false);
+    }
+
+    public void createNewFolderClient(ActionEvent actionEvent) {
+        newFolderButtonClient.setVisible(false);
+        newFolderButtonClient.setManaged(false);
+        newFolderNameClient.setVisible(true);
+        newFolderNameClient.setManaged(true);
+        acceptNewFolderNameClient.setVisible(true);
+        acceptNewFolderNameClient.setManaged(true);
     }
 
 }

@@ -4,30 +4,35 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="10" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.HelloController">
+<?import java.net.URL?>
+<VBox spacing="10" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.HelloController"
+stylesheets="../../../css/style.css">
 
-    <MenuBar>
-        <Menu text="File" />
-        <Menu text="Edit" />
-        <Menu text="Help" />
-    </MenuBar>
+<!--    <stylesheets>-->
+<!--        <URL value="@/css/style.css"/>-->
+<!--    </stylesheets>-->
 
-    <VBox>
+    <HBox fx:id="authPanel">
+        <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="login"/>
+        <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" promptText="password"/>
+        <Button text="auth" onAction="#tryToAuth"/>
+        <Button text="reg" onAction="#tryToReg"/>
+    </HBox>
+
+    <VBox fx:id="workPanel" visible="false" managed="false">
         <padding>
             <Insets bottom="20.0" left="10.0" right="10.0" top="5.0" />
         </padding>
 
         <HBox spacing="10">
-            <Label text="Host: " />
-            <TextArea fx:id="hostTextArea" maxHeight="5" maxWidth="120" />
+            <Label text="Host: "/>
+            <TextArea fx:id="hostTextArea" maxHeight="5" maxWidth="120" editable="false"/>
             <Label text="Username" />
-            <TextArea fx:id="usernameTextArea" maxHeight="5" maxWidth="120" />
-            <Label text="Password" />
-            <PasswordField fx:id="passwordTextArea" maxHeight="5" maxWidth="120" />
+            <TextArea fx:id="usernameTextArea" maxHeight="5" maxWidth="120" editable="false"/>
         </HBox>
 
         <HBox>
-            <TextArea fx:id="commandsTextArea" HBox.hgrow="ALWAYS" maxHeight="100" editable="false"/>
+            <TextArea fx:id="commandsTextArea" HBox.hgrow="ALWAYS" maxHeight="100" editable="false" />
             <padding>
                 <Insets bottom="20.0" top="10.0" />
             </padding>
@@ -40,7 +45,6 @@
 
         <HBox spacing="10">
             <Button text="Copy file" focusTraversable="false" onAction="#CopyBtnAction"/>
-            <Button text="Move file" focusTraversable="false" />
             <Button text="Delete file" focusTraversable="false" onAction="#DeleteBtnAction"/>
         </HBox>
 

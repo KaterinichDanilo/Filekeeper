@@ -12,6 +12,10 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
 import netty.handler.CloudFileHandler;
+import netty.handler.UsersData;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class CloudServer {
@@ -31,7 +35,7 @@ public class CloudServer {
                             socketChannel.pipeline().addLast(
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
-                                    new CloudFileHandler()
+                                    new CloudFileHandler(new UsersData())
                             );
                         }
                     });
@@ -39,6 +43,7 @@ public class CloudServer {
             ChannelFuture future = server.bind(5000).sync();
             log.debug("Server is ready");
             future.channel().closeFuture().sync();
+            System.out.println("!!!!!!!!!!!!!!!sync");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

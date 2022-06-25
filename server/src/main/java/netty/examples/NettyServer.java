@@ -1,4 +1,4 @@
-package netty;
+package netty.examples;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -7,14 +7,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 import lombok.extern.slf4j.Slf4j;
-import netty.handler.ByteBufToStringInboundHandler;
 import netty.handler.MainStringInboundHandler;
-import netty.handler.MainStringOutBoundHandler;
-import netty.handler.StringToByteBufOutboundHandler;
 
 @Slf4j
-public class NettyCorePipelineServer {
+public class NettyServer {
     public static void main(String[] args) {
 
         EventLoopGroup auth = new NioEventLoopGroup(1);
@@ -29,9 +28,8 @@ public class NettyCorePipelineServer {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(
-                                    new StringToByteBufOutboundHandler(),
-                                    new MainStringOutBoundHandler(),
-                                    new ByteBufToStringInboundHandler(),
+                                    new StringDecoder(),
+                                    new StringEncoder(),
                                     new MainStringInboundHandler()
                             );
                         }

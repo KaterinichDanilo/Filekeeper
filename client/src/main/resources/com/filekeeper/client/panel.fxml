@@ -3,12 +3,13 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.PanelController">
+<VBox xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.filekeeper.client.PanelController"
+      stylesheets="../../../css/style.css">
 
     <HBox>
         <ComboBox fx:id="disksBox" onAction="#selectDiskAction"/>
         <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" />
-        <Button text="Up" onAction="#btnUpPathAction"/>
+        <Button fx:id="btnUp" text="Up" onAction="#btnUpPathActionServer"/>
     </HBox>
 
     <TableView fx:id="tableView" VBox.vgrow="ALWAYS"/>

@@ -245,9 +245,9 @@ public class HelloController implements Initializable {
                             });
                         } else if (message instanceof DeleteFile deleteFile) {
                             if (deleteFile.getStatus()) {
-                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "was deleted from the server"));
+                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "was deleted from the server\n"));
                             } else {
-                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "wasn't deleted from the server"));
+                                commandsTextArea.appendText((new File(deleteFile.getPath()).getName() + "wasn't deleted from the server\n"));
                             }
                         }
                     }

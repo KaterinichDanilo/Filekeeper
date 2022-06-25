@@ -39,9 +39,11 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage>{
             currentDir = Path.of(pathRequest.getPath());
             ctx.writeAndFlush(new ListFiles(currentDir));
         } else if (cloudMessage instanceof Authentication auth) {
-            if (data.getPassword(auth.getLogin()).equals(auth.getPassword())) {
-                currentDir = currentDir.resolve(auth.getLogin());
-                auth.setAuthStatus(true);
+            if (data != null) {
+                if (data.getPassword(auth.getLogin()).equals(auth.getPassword())) {
+                    currentDir = currentDir.resolve(auth.getLogin());
+                    auth.setAuthStatus(true);
+                }
             } else {
                 auth.setAuthStatus(false);
             }

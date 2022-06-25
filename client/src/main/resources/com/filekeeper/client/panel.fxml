@@ -9,6 +9,7 @@
     <HBox>
         <ComboBox fx:id="disksBox" onAction="#selectDiskAction"/>
         <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnUp" text="Up" onAction="#btnUpPathActionServer"/>
     </HBox>
 
     <TableView fx:id="tableView" VBox.vgrow="ALWAYS"/>

@@ -1,5 +1,6 @@
 package com.filekeeper.client;
 
+import cloud.PathRequest;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -132,5 +133,13 @@ public class PanelController implements Initializable {
 
     public String getCurrentPath() {
         return pathField.getText();
+    }
+
+    public void btnUpPathActionServer(ActionEvent actionEvent) {
+        String currentPath = getCurrentPath();
+        Path upperPath = Paths.get(pathField.getText()).getParent();
+        if (!(upperPath.equals(null))) {
+            updateList(upperPath);
+        }
     }
 }
